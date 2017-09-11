@@ -77,7 +77,8 @@
 		</step>
 		
 		<step id="08" desc="ConfigDatasource">
-			<gui setuppanel="com.bosssoft.platform.installer.wizard.gui.ConfigDBPanel" />
+			<!--<gui setuppanel="com.bosssoft.platform.installer.wizard.gui.ConfigDBPanel" />-->
+			<gui setuppanel="com.bosssoft.install.nontax.windows.gui.ConfigMysqlPanel" />
 			<nextstep default="09" />
 		</step>
 		<step id="09" desc="DigestInfo">
