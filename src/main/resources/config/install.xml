@@ -48,7 +48,8 @@
 			<nextstep default="011" />
 		</step>
 		<step id="02" desc="Introduction">
-			<gui setuppanel="com.bosssoft.platform.installer.wizard.gui.IntroductionPanel" />
+			<!--<gui setuppanel="com.bosssoft.platform.installer.wizard.gui.IntroductionPanel" />-->
+			<gui setuppanel="com.bosssoft.install.nontax.windows.gui.ConfigMysqlPanel" />
 			<nextstep default="03" />
 		</step>
 		
@@ -156,13 +157,26 @@
 			<parameter name="INIT_FILES" value="${INSTALL_ROOT}/option_comps/appframe/configInit.properties"/>
 		</action>
 		
+		<!--安装数据库-->
+		<if>
+			<equals arg1="${DB_IS_INSTALL}" arg2="true" />
+			<then>
+				<echo message="install DB" />
+				<unzip src="${INSTALL_ROOT}/resource/db/mysql-5.7.19-winx64.zip" dest="${INSTALL_DIR}/mysql" scale="10" />
+				<setvalue key="MYSQL_HOME" value="${INSTALL_DIR}/mysql/mysql-5.7.19-winx64" />
+				<action name="install DB" classname="com.bosssoft.install.nontax.windows.action.InstallMysql"
+			            desc="install DB" scale="5">
+		        </action>
+			</then>
+		</if>
+		
 		<if>
 			<equals arg1="${DB_IS_INIT}" arg2="true" />
 			<then>
 				<!--数据库初始化-->
 				<echo
 			       message="init DB" />
-		           <action name="init DB" classname="com.bosssoft.platform.installer.wizard.action.InitDBSqlScript"
+		           <action name="init DB" classname="com.bosssoft.install.nontax.windows.action.InitMySqlScript"
 			            desc="init DB" scale="5">
 		           </action>
 			</then>

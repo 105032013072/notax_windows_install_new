@@ -23,6 +23,7 @@ import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
 import javax.swing.text.DefaultFormatter;
 
+import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 
 import com.bosssoft.platform.installer.core.MainFrameController;
@@ -31,12 +32,14 @@ import com.bosssoft.platform.installer.core.gui.AbstractSetupPanel;
 import com.bosssoft.platform.installer.core.util.I18nUtil;
 import com.bosssoft.platform.installer.core.util.ReflectUtil;
 import com.bosssoft.platform.installer.wizard.action.CheckDataSourceExistAction;
+import com.bosssoft.platform.installer.wizard.action.InitDB;
 import com.bosssoft.platform.installer.wizard.cfg.ProductInstallConfigs;
 import com.bosssoft.platform.installer.wizard.cfg.Server;
 import com.bosssoft.platform.installer.wizard.gui.AbstractDBEditorPanel;
 import com.bosssoft.platform.installer.wizard.gui.component.MultiLabel;
 import com.bosssoft.platform.installer.wizard.gui.component.StepTitleLabel;
 import com.bosssoft.platform.installer.wizard.gui.component.XFileChooser;
+import com.bosssoft.platform.installer.wizard.gui.validate.ValidatorHelper;
 import com.bosssoft.platform.installer.wizard.util.DBConnectionUtil;
 
 public class ConfigMysqlPanel extends AbstractSetupPanel implements ActionListener {
@@ -56,6 +59,7 @@ public class ConfigMysqlPanel extends AbstractSetupPanel implements ActionListen
 	protected JLabel lbPassword = new JLabel();
 	protected JLabel lblUser = new JLabel();
 	protected JLabel lblSID = new JLabel();
+	protected JCheckBox chkInstall = new JCheckBox();
 
 	protected JComboBox cbxDrivers = new JComboBox();
 
@@ -71,7 +75,6 @@ public class ConfigMysqlPanel extends AbstractSetupPanel implements ActionListen
 	protected JPasswordField tfdPassword = new JPasswordField();
 	protected JTextField tfdUser = new JTextField();
 	protected XFileChooser fileChooser = new XFileChooser();
-	protected XFileChooser SqlScriptChooser=new XFileChooser();
 	protected TxtDocumentListener documentListener = new TxtDocumentListener();
 	private   EditorActionListener actionListener = new EditorActionListener();
 
@@ -93,7 +96,7 @@ public class ConfigMysqlPanel extends AbstractSetupPanel implements ActionListen
 		this.lblDB.setText(I18nUtil.getString("DBCONFIG.LABEL.DBTYPE"));
 		this.lblDB.setBounds(new Rectangle(30, 38, 100, 16));
 
-		this.cbxDb.setBounds(new Rectangle(162, 35, 240, 20));
+		this.cbxDb.setBounds(new Rectangle(162, 35, 140, 20));
 
 		loadSupportedDBSvr();
 		this.cbxDb.addActionListener(this);
@@ -107,18 +110,24 @@ public class ConfigMysqlPanel extends AbstractSetupPanel implements ActionListen
 		this.btnDBTest.setMnemonic('T');
 		this.btnDBTest.setMargin(new Insets(2, 2, 2, 2));
 		this.btnDBTest.setOpaque(false);
+		this.btnDBTest.setEnabled(false);
 		this.chkUserDbDriver.setText(I18nUtil.getString("DBCONFIG.LABEL.USERDRIVER"));
 		this.chkUserDbDriver.setOpaque(false);
 		this.chkUserDbDriver.setMargin(new Insets(0, 0, 0, 0));
 
 		this.tfdUser.setBounds(new Rectangle(162, 148, 237, 21));
 		this.tfdPassword.setBounds(new Rectangle(162, 178, 237, 21));
+		this.tfdUser.setText("root");
+		this.tfdUser.setEnabled(false);
+		this.tfdPassword.setEditable(false);
 		this.tfdIP.setBounds(new Rectangle(162, 60, 237, 21));
 		this.tfdIP.setText("127.0.0.1");
+		this.tfdIP.setEnabled(false);
 		this.lblDbDriver.setBounds(new Rectangle(48, 265, 87, 16));
-		this.btnDBTest.setBounds(new Rectangle(290, 329, 120, 21));
+		this.btnDBTest.setBounds(new Rectangle(285, 295, 120, 21));
 		this.chkUserDbDriver.setBounds(new Rectangle(30, 233, 130, 25));
-		this.tfdPort.setBounds(new Rectangle(133, 29, 54, 21));
+		this.tfdPort.setText("3306");
+		this.tfdPort.setEnabled(false);
 		this.tfdPort.setBounds(new Rectangle(162, 89, 54, 21));
 		this.cbxDrivers.setBounds(new Rectangle(162, 265, 237, 21));
 		this.lblSID.setBounds(new Rectangle(30, 119, 94, 16));
@@ -135,8 +144,8 @@ public class ConfigMysqlPanel extends AbstractSetupPanel implements ActionListen
 		this.lblPort.setBounds(new Rectangle(30, 90, 70, 16));
 		this.lblUrl.setBounds(new Rectangle(30, 208, 101, 16));
 		this.lblIP.setBounds(new Rectangle(30, 61, 64, 16));
-		this.tfdUrl.setBounds(new Rectangle(162, 207, 237, 21));
-
+		this.tfdUrl.setBounds(new Rectangle(162, 207, 237, 21)); 
+		
 		this.lblSID.setText(I18nUtil.getString("DBCONFIG.LABEL.DBNAME"));
 		this.lblUser.setText(I18nUtil.getString("DBCONFIG.LABEL.USER"));
 		this.lbPassword.setText(I18nUtil.getString("DBCONFIG.LABEL.PASSWORD"));
@@ -153,10 +162,12 @@ public class ConfigMysqlPanel extends AbstractSetupPanel implements ActionListen
 		this.fileChooser.setEnabled(false);
 		this.fileChooser.setBounds(new Rectangle(162, 236, 237, 21));
 		
-		this.SqlScriptChooser.setButtonText(I18nUtil.getString("BUTTON.BROWSE"));
-		this.SqlScriptChooser.setButtonmnMnemonic('R');
-		this.SqlScriptChooser.setEnabled(false);
-		this.SqlScriptChooser.setBounds(new Rectangle(162, 295, 237, 21));
+		this.chkInstall.setText("安装Mysql");
+		this.chkInstall.setBounds(new Rectangle(310, 38, 100, 16));
+		this.chkInstall.setOpaque(false);
+		this.chkInstall.setMargin(new Insets(0, 0, 0, 0));
+		this.chkInstall.setSelected(true);
+		
 		add(this.lblPort, null);
 		add(this.tfdSID, null);
 		add(this.tfdPort, null);
@@ -176,13 +187,10 @@ public class ConfigMysqlPanel extends AbstractSetupPanel implements ActionListen
 		add(this.lblSID, null);
 		add(this.tfdIP, null);
 		add(this.lblIP, null);
-		add(this.SqlScriptChooser,null);
+		add(this.chkInstall,null);
 
 		this.fileChooser.setFileSelectionMode(0);
 		this.fileChooser.setMultiSelectionEnabled(true);
-
-		this.SqlScriptChooser.setFileSelectionMode(0);
-		this.SqlScriptChooser.setMultiSelectionEnabled(true);
 		
 		this.tfdUser.getDocument().addDocumentListener(this.documentListener);
 		this.tfdPassword.getDocument().addDocumentListener(this.documentListener);
@@ -196,6 +204,9 @@ public class ConfigMysqlPanel extends AbstractSetupPanel implements ActionListen
 		this.chkUserDbDriver.addActionListener(this.actionListener);
 		this.chkInitDB.addActionListener(this.actionListener);
 
+		this.chkInstall.addActionListener(this.actionListener);
+		
+		this.tfdUrl.setText(getDBUrl());
 		//refreshSubPanel();
 	}
 
@@ -205,20 +216,43 @@ public class ConfigMysqlPanel extends AbstractSetupPanel implements ActionListen
 	//将数据库配置信息保存到context中
 	public void beforeNext() {
 	
-		/*if (this.dbEditorPanel != null) {
-			Properties properties = this.dbEditorPanel.getProperties();
+		
+			Properties properties = getProperties();
 			getContext().putAll(properties);
 			Server dbServer = (Server) this.cbxDb.getSelectedItem();
 
 			getContext().setValue("DB_TYPE", dbServer.getName());
 			getContext().setValue("DB_VERSION", dbServer.getVersion());
 
-			getContext().setValue("DB_DS_JNDI_NAME", this.tfdDataSourceName.getText().trim());
+			getContext().setValue("DB_DS_JNDI_NAME", "datasource");
 		
 			//记录日志
 		   logger.info("config DB: "+properties);
+	}
+
+	private Properties getProperties() {
+		Properties p = new Properties();
+
+		p.put("DB_IP", this.tfdIP.getText().trim());
+		p.put("DB_NAME", this.tfdSID.getText());
+		p.put("DB_USERNAME", this.tfdUser.getText());
+		p.put("DB_PASSWORD", new String(this.tfdPassword.getPassword()));
+		p.put("DB_SERVER_PORT", this.tfdPort.getText().trim());
+		p.put("DB_URL", this.tfdUrl.getText().trim());
+		p.put("DB_IS_INIT", Boolean.toString(this.chkInitDB.isSelected()));
+		p.put("DB_IS_DEFAULT_JAR", Boolean.toString(!this.chkUserDbDriver.isSelected()));
+        p.put("DB_IS_INSTALL", Boolean.toString(this.chkInstall.isSelected()));
 		
-		}*/
+		if (this.chkUserDbDriver.isSelected()) {
+			p.put("DB_JDBC_LIBS", this.fileChooser.getFilePath());
+			if (this.cbxDrivers.getSelectedItem() != null)
+				p.put("DB_DRIVER", this.cbxDrivers.getSelectedItem().toString());
+		} else {
+			p.put("DB_DRIVER", "com.mysql.jdbc.Driver");
+			p.put("DB_JDBC_LIBS", "");
+		}
+		
+		return p;
 	}
 
 	public void beforePrevious() {
@@ -233,31 +267,62 @@ public class ConfigMysqlPanel extends AbstractSetupPanel implements ActionListen
 	}
 
 	public boolean checkInput() {
-		/*this.dbEditorPanel.setContext(getContext());
-		getContext().putAll(this.dbEditorPanel.getProperties());
-		if (this.dbEditorPanel == null) {
+		String app_server_name = this.context.getStringValue("APP_SERVER_NAME");
+		if(btnDBTest.isEnabled()){
+			if (("WebLogic".indexOf(app_server_name) != -1) || ("WebSphere6.0".indexOf(app_server_name) != -1)) {
+				String result = this.testDBConnection();
+				if (result != null) {
+					showError(result);
+					return false;
+				}
+			}
+		}
+		
+		String message = check();
+		if ((message != null) && (this.chkInitDB.isSelected())) {
+			showError(message);
 			return false;
 		}
 
-		if ("PE".equalsIgnoreCase(this.context.getStringValue("EDITION"))) {
-			boolean exist = CheckDataSourceExistAction.checkDataSourceExist(this.context, this.tfdDataSourceName.getText().trim());
-			if (exist) {
-				String msg = I18nUtil.getString("CheckDataSourceExistAction.Exist.Error");
-				showError(MessageFormat.format(msg, new Object[] { this.tfdDataSourceName.getText().trim() }));
-				return false;
-			}
-
-		}
-
-		String app_server_name = this.context.getStringValue("APP_SERVER_NAME");
-		if (("WebLogic".indexOf(app_server_name) != -1) || ("WebSphere6.0".indexOf(app_server_name) != -1)) {
-			String result = this.dbEditorPanel.testDBConnection();
+		if (this.chkInitDB.isSelected()) {
+			String result = testDBConnection();
 			if (result != null) {
 				showError(result);
 				return false;
 			}
+
+			if (InitDB.isInitialized(DBConnectionUtil.getConnection(this.context))) {
+				int ans = MainFrameController.showConfirmDialog(I18nUtil.getString("DBCONFIG.MSG.DB.ALREADY.INIT"), I18nUtil.getString("DIALOG.TITLE.WARNING"), 1, 2);
+				if (1 == ans) {
+					this.context.setValue("DB_IS_FORCE_INIT", "false");
+				}
+				if (2 == ans) {
+					return false;
+				}
+			}
 		}
-		return this.dbEditorPanel.checkInput();*/
+
+		if (message != null) {
+			message = I18nUtil.getString("DBCONFIG.MSG.CONNECTERROR") + message + I18nUtil.getString("DBCONFIG.MSG.CONTINUE");
+			int result = MainFrameController.showConfirmDialog(message, I18nUtil.getString("DIALOG.TITLE.WARNING"), 0, 2);
+			return result == 0;
+		}
+		if(btnDBTest.isEnabled()){
+			String test_conn_result = testDBConnection();
+			if (test_conn_result != null) {
+				String msg = I18nUtil.getString("DBCONFIG.MSG.CONNECTERROR") + I18nUtil.getString("DBCONFIG.MSG.CONTINUE");
+				int dialog_result = MainFrameController.showConfirmDialog(msg, I18nUtil.getString("DIALOG.TITLE.WARNING"), 0, 2);
+				return dialog_result == 0;
+			}
+		}
+		
+		
+		//确认数据库是否进行初始化
+		if(chkInitDB.isSelected()){
+			int dialog_result=MainFrameController.showConfirmDialog(I18nUtil.getString("INITDB.SURE"), I18nUtil.getString("DIALOG.TITLE.WARNING"), 0, 2);
+		    return dialog_result==0;
+		}
+
 		return true;
 	}
 
@@ -344,15 +409,17 @@ public class ConfigMysqlPanel extends AbstractSetupPanel implements ActionListen
 				ConfigMysqlPanel.this.loadJDBCDriverFromFile();
 			} else if (chkInitDB == source) {
 				ConfigMysqlPanel.this.resetTabSpaceText();
-				ConfigMysqlPanel.this.refreshLoadSqlScript();
 			} else if (chkUserDbDriver == source) {
 				ConfigMysqlPanel.this.refreshLoadUserDriver();
-			} else if (btnDBTest == source) {
-				/*String message = AbstractDBEditorPanel.this.testDBConnection();
+			} else if(chkInstall==source){
+				ConfigMysqlPanel.this.refreshDBInfo();
+				
+			}else if (btnDBTest == source) {
+				String message = ConfigMysqlPanel.this.testDBConnection();
 				if (message != null)
 					MainFrameController.showMessageDialog(message, I18nUtil.getString("DIALOG.TITLE.ERROR"), 0);
 				else
-					MainFrameController.showMessageDialog(I18nUtil.getString("DBCONFIG.MESSAGE.CONNECTIONOK"), I18nUtil.getString("DIALOG.TITLE.INFO"), 1);*/
+					MainFrameController.showMessageDialog(I18nUtil.getString("DBCONFIG.MESSAGE.CONNECTIONOK"), I18nUtil.getString("DIALOG.TITLE.INFO"), 1);
 			}
 		}
 	}
@@ -365,14 +432,105 @@ public class ConfigMysqlPanel extends AbstractSetupPanel implements ActionListen
 		
 	}
 
+	public String testDBConnection() {
+		
+		String result = check();
+
+		if (result != null) {
+			return result;
+		}
+
+		int rtn = validateConn();
+
+		if (rtn == 100)
+			return null;
+		if (rtn == -1)
+			return I18nUtil.getString("DBCONFIG.MESSAGE.CONNECTIONFAIL");
+		if (rtn == 0) {
+			return I18nUtil.getString("DBCONFIG.MESSAGE.CANTCREATETBL");
+		}
+		return I18nUtil.getString("DBCONFIG.MESSAGE.CONNECTIONFAIL");
+	}
+
+	private int validateConn() {
+		String jdbcUrl = this.tfdUrl.getText().trim();
+		String user = this.tfdUser.getText();
+		String password = new String(this.tfdPassword.getPassword());
+		String jdbcDriverClass = null;
+		String driverFiles = null;
+
+		if (!this.chkUserDbDriver.isSelected()) {
+			jdbcDriverClass ="com.mysql.jdbc.Driver";
+		} else {
+			driverFiles = this.fileChooser.getFilePath();
+			jdbcDriverClass = this.cbxDrivers.getSelectedItem().toString();
+		}
+
+		int rtn = DBConnectionUtil.validateDBConfig(driverFiles, jdbcDriverClass, jdbcUrl, user, password);
+		return rtn;
+	}
+
+	private String check() {
+		if ((StringUtils.isEmpty(this.tfdIP.getText()))
+				|| (!ValidatorHelper.isPatternValid(this.tfdIP.getText(), "^((2[0-4]\\d|25[0-5]|[01]?\\d\\d?)\\.){3}(2[0-4]\\d|25[0-5]|[01]?\\d\\d?)$"))) {
+			return I18nUtil.getString("DBCONFIG.MSG.IPNULL");
+		}
+
+		if (this.tfdUrl.getText().trim().length() == 0) {
+			return I18nUtil.getString("DBCONFIG.MSG.URLNULL");
+		}
+
+		if (this.tfdUser.getText().trim().length() == 0) {
+			return I18nUtil.getString("DBCONFIG.MSG.USERNULL");
+		}
+
+		/*if (this.tfdPassword.getPassword().length == 0) {
+			return I18nUtil.getString("DBCONFIG.MSG.PWDNULL");
+		}*/
+
+		String port = this.tfdPort.getText();
+		if ((StringUtils.isEmpty(port)) || (StringUtils.isBlank(port))) {
+			return I18nUtil.getString("CHOOSEIP.PORT.EMPTY");
+		}
+		if ((!ValidatorHelper.isInteger(port)) || ((Integer.valueOf(port).intValue() < 1) && (Integer.valueOf(port).intValue() > 65535))) {
+			return I18nUtil.getString("CHOOSEIP.PORT.INVALID");
+		}
+
+		if (this.chkUserDbDriver.isSelected()) {
+			if (this.fileChooser.getFilePath().trim().length() == 0) {
+				return I18nUtil.getString("DBCONFIG.MSG.USERDIVERJARNULL");
+			}
+			if (this.cbxDrivers.getItemCount() == 0) {
+				return I18nUtil.getString("DBCONFIG.MSG.USERDRIVERCLASSNULL");
+			}
+		}
+
+		if (this.tfdSID.getText().trim().length() == 0) {
+			return I18nUtil.getString("DBCONFIG.MSG.USERNAMENULL");
+		}
+		try {
+			if ((Long.parseLong(this.tfdPort.getText().trim()) <= 0L) || (Long.parseLong(this.tfdPort.getText().trim()) > 65535L))
+				return I18nUtil.getString("DBCONFIG.MSG.PORTERROR");
+		} catch (Exception e) {
+			return I18nUtil.getString("DBCONFIG.MSG.PORTVALUEERROR");
+		}
+
+		return null;
+	}
+
+	public void refreshDBInfo() {
+		this.tfdIP.setEnabled(!this.chkInstall.isSelected());
+		this.tfdPort.setEnabled(!this.chkInstall.isSelected());
+		this.tfdUser.setEnabled(!this.chkInstall.isSelected());
+		this.tfdPassword.setEditable(!this.chkInstall.isSelected());
+		this.btnDBTest.setEnabled(!this.chkInstall.isSelected());
+	}
+
 	public void refreshLoadUserDriver() {
 		this.fileChooser.setEnabled(this.chkUserDbDriver.isSelected());
 		this.cbxDrivers.setEnabled(this.chkUserDbDriver.isSelected());
 	}
 
-	public void refreshLoadSqlScript() {
-		this.SqlScriptChooser.setEnabled(this.chkInitDB.isSelected());
-	}
 
 	public void resetTabSpaceText() {
 		String db_type = getClass().getSimpleName().toLowerCase();
