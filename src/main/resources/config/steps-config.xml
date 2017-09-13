@@ -8,7 +8,8 @@
 	<stepitem id="SetRunEvn" namekey="STEP.RUNEVN.CONF" stepid="06"/>
 	<stepitem id="setup-COMPONENT" namekey="STEP.CHOOSE.COMPONENT" stepid="07"/>
 	<stepitem id="config-ds" namekey="STEP.DBCONFIG" stepid="08"/>
-	<stepitem id="digest-info" namekey="STEP.DIGEST" stepid="09"/>
-	<stepitem id="installing" namekey="STEP.INSTALLING" stepid="10"/>
-	<stepitem id="finished" namekey="STEP.INSTALLCOMPLETE" stepid="11"/>
+	<stepitem id="config-product" namekey="STEP.PRODUCTCONFIG" stepid="09"/>
+	<stepitem id="digest-info" namekey="STEP.DIGEST" stepid="10"/>
+	<stepitem id="installing" namekey="STEP.INSTALLING" stepid="11"/>
+	<stepitem id="finished" namekey="STEP.INSTALLCOMPLETE" stepid="12"/>
 </steps>

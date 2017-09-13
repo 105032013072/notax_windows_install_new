@@ -5,6 +5,7 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.sql.Connection;
 import java.util.Map;
 
 import org.apache.commons.io.FilenameUtils;
@@ -15,6 +16,7 @@ import com.bosssoft.platform.installer.core.IContext;
 import com.bosssoft.platform.installer.core.InstallException;
 import com.bosssoft.platform.installer.core.action.IAction;
 import com.bosssoft.platform.installer.core.util.InstallerFileManager;
+import com.bosssoft.platform.installer.wizard.util.DBConnectionUtil;
 
 public class InstallMysql implements IAction{
 	transient Logger logger = Logger.getLogger(getClass());
@@ -22,15 +24,18 @@ public class InstallMysql implements IAction{
 	public void execute(IContext context, Map params) throws InstallException {
 		String mysqlHome=(String) context.getValue("MYSQL_HOME");
 		String dir=mysqlHome.substring(0, mysqlHome.indexOf(":"));
+		String dbname=(String) context.getValue("DB_NAME");
 		String batFile=InstallerFileManager.getInstallerHome()+File.separator+"mysql_install.bat";
 		try {
-			runbat(batFile,dir,mysqlHome);
+			runbat(batFile,dir,mysqlHome,dbname);
 		} catch (Exception e) {
 			e.printStackTrace();
 			throw new InstallException(e);
 		}
 		
 	}
+
+	
 
 	private void runbat(String batFile,String... argStrings) throws Exception {
 

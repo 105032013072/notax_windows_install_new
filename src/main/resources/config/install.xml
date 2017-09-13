@@ -49,7 +49,9 @@
 		</step>
 		<step id="02" desc="Introduction">
 			<!--<gui setuppanel="com.bosssoft.platform.installer.wizard.gui.IntroductionPanel" />-->
-			<gui setuppanel="com.bosssoft.install.nontax.windows.gui.ConfigMysqlPanel" />
+			<!--<gui setuppanel="com.bosssoft.install.nontax.windows.gui.ConfigMysqlPanel" />-->
+			<!--<gui setuppanel="com.bosssoft.platform.installer.wizard.gui.AppSvrPanel" />-->
+			<gui setuppanel="com.bosssoft.install.nontax.windows.gui.ConfigProduct" />
 			<nextstep default="03" />
 		</step>
 		
@@ -78,20 +80,27 @@
 		</step>
 		
 		<step id="08" desc="ConfigDatasource">
-			<!--<gui setuppanel="com.bosssoft.platform.installer.wizard.gui.ConfigDBPanel" />-->
+
 			<gui setuppanel="com.bosssoft.install.nontax.windows.gui.ConfigMysqlPanel" />
 			<nextstep default="09" />
 		</step>
-		<step id="09" desc="DigestInfo">
-			<gui setuppanel="com.bosssoft.platform.installer.wizard.gui.DigestPanel" />
+		
+		<step id="09" desc="ConfigProduct">
+			
+			<gui setuppanel="com.bosssoft.install.nontax.windows.gui.ConfigProduct" />
 			<nextstep default="10" />
 		</step>
-		<step id="10" desc="Installing" auto="true">
-			<gui setuppanel="com.bosssoft.platform.installer.wizard.gui.InstallingPanel" />
-			<actionscall id="install" />
+		
+		<step id="10" desc="DigestInfo">
+			<gui setuppanel="com.bosssoft.platform.installer.wizard.gui.DigestPanel" />
 			<nextstep default="11" />
 		</step>
-		<step id="11" desc="Finished">
+		<step id="11" desc="Installing" auto="true">
+			<gui setuppanel="com.bosssoft.platform.installer.wizard.gui.InstallingPanel" />
+			<actionscall id="install" />
+			<nextstep default="12" />
+		</step>
+		<step id="12" desc="Finished">
 			<gui setuppanel="com.bosssoft.platform.installer.wizard.gui.InstallFinishedPanel" />
 		</step>
 	</steps>
@@ -106,6 +115,16 @@
 		<action name="getip" classname="com.bosssoft.install.nontax.windows.action.GetIp">
 		</action>	
 			
+	    <!--安装Tomcat-->
+	    <if>
+			<equals arg1="${IS_APP_SERVER_INSTALL}" arg2="true" />
+			<then>
+				<!--Tomcat解压，设置路径-->
+				<echo message="install Tomcat" />
+		         <unzip src="${INSTALL_ROOT}/resource/as/apache-tomcat-7.0.81-windows-x64.zip" dest="${INSTALL_DIR}/as" scale="10" /> 
+		         <setvalue key="AS_TOMCAT_HOME" value="${INSTALL_DIR}/as/apache-tomcat-7.0.81" />
+			</then>
+		</if>
 		<!--运行环境服务安装-->
 		<echo message="create run environment"/>
 		<action name="create run environment" classname="com.bosssoft.platform.installer.wizard.action.CreateRunEvn" scale="25">
